@@ -39,9 +39,9 @@ public interface ArtifactTransformSpec<T> extends ActionConfiguration {
      */
     AttributeContainer getTo();
 
-    T getConfiguration();
+    T getParameters();
 
-    void configuration(Action<? super T> action);
+    void parameters(Action<? super T> action);
 
     /**
      * Returns the {@link ArtifactTransform} implementation to use for this transform. Defaults to the value specified by the {@link TransformAction} annotation attached to the configuration object.
