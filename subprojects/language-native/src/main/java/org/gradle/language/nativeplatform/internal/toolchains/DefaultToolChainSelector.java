@@ -16,7 +16,9 @@
 
 package org.gradle.language.nativeplatform.internal.toolchains;
 
+import org.gradle.api.GradleException;
 import org.gradle.internal.Cast;
+import org.gradle.internal.logging.text.TreeFormatter;
 import org.gradle.language.cpp.CppPlatform;
 import org.gradle.language.cpp.internal.DefaultCppPlatform;
 import org.gradle.language.swift.SwiftPlatform;
@@ -26,6 +28,7 @@ import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.nativeplatform.TargetMachine;
 import org.gradle.nativeplatform.platform.internal.Architectures;
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform;
+import org.gradle.nativeplatform.toolchain.internal.DefaultNativeToolChainRegistry;
 import org.gradle.nativeplatform.toolchain.internal.NativeLanguage;
 import org.gradle.nativeplatform.toolchain.internal.NativeToolChainInternal;
 import org.gradle.nativeplatform.toolchain.internal.NativeToolChainRegistryInternal;
@@ -67,6 +70,12 @@ public class DefaultToolChainSelector implements ToolChainSelector {
         NativeToolChainInternal toolChain = registry.getForPlatform(sourceLanguage, targetNativePlatform);
         // TODO - don't select again here, as the selection is already performed to select the toolchain
         PlatformToolProvider toolProvider = toolChain.select(sourceLanguage, targetNativePlatform);
+
+        if (toolChain instanceof DefaultNativeToolChainRegistry.UnsupportedNativeToolChain) {
+            TreeFormatter formatter = new TreeFormatter();
+            toolProvider.explain(formatter);
+            throw new GradleException(formatter.toString());
+        }
 
         CppPlatform targetPlatform = new DefaultCppPlatform(requestPlatform.getTargetMachine(), targetNativePlatform);
         return new DefaultResult<CppPlatform>(toolChain, toolProvider, targetPlatform);

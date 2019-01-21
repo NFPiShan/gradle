@@ -131,7 +131,8 @@ abstract class AbstractCppComponentIntegrationTest extends AbstractNativeLanguag
         componentUnderTest.writeToProject(testDirectory)
 
         and:
-        buildFile << configureTargetMachines("machines.os('${currentOsFamilyName}').architecture('foo')")
+        buildFile << configureTargetMachines("machines.${currentHostOperatingSystemFamilyDsl}.architecture('foo')")
+        buildFile << configureToolChainSupport('foo')
 
         expect:
         fails taskNameToAssembleDevelopmentBinary
@@ -145,6 +146,7 @@ abstract class AbstractCppComponentIntegrationTest extends AbstractNativeLanguag
 
         and:
         buildFile << configureTargetMachines("machines.${currentHostOperatingSystemFamilyDsl}.architecture('foo'), machines.${currentHostOperatingSystemFamilyDsl}")
+        buildFile << configureToolChainSupport('foo')
 
         expect:
         succeeds taskNameToAssembleDevelopmentBinary
@@ -158,10 +160,36 @@ abstract class AbstractCppComponentIntegrationTest extends AbstractNativeLanguag
 
         and:
         buildFile << configureTargetMachines("machines.${currentHostOperatingSystemFamilyDsl}.architecture('foo'), machines.${currentHostOperatingSystemFamilyDsl}, machines.${currentHostOperatingSystemFamilyDsl}")
+        buildFile << configureToolChainSupport('foo')
 
         expect:
         succeeds taskNameToAssembleDevelopmentBinary
         result.assertTasksExecutedAndNotSkipped(getTasksToAssembleDevelopmentBinary(currentArchitecture), ":$taskNameToAssembleDevelopmentBinary")
+    }
+
+    def "fails configuration when architecture is not supported by any tool chain"() {
+        given:
+        makeSingleProject()
+        componentUnderTest.writeToProject(testDirectory)
+
+        and:
+        buildFile << configureTargetMachines("machines.${currentHostOperatingSystemFamilyDsl}, machines.${currentHostOperatingSystemFamilyDsl}.architecture('foo')")
+
+        expect:
+        fails taskNameToAssembleDevelopmentBinary
+    }
+
+    def "can specify unbuildable architecture as a component target machine"() {
+        given:
+        makeSingleProject()
+        componentUnderTest.writeToProject(testDirectory)
+
+        and:
+        buildFile << configureTargetMachines("machines.${currentHostOperatingSystemFamilyDsl}, machines.${currentHostOperatingSystemFamilyDsl}.architecture('foo')")
+        buildFile << configureToolChainSupport('foo')
+
+        expect:
+        succeeds taskNameToAssembleDevelopmentBinary
     }
 
     protected String getCurrentHostOperatingSystemFamilyDsl() {
@@ -183,10 +211,22 @@ abstract class AbstractCppComponentIntegrationTest extends AbstractNativeLanguag
 
     protected abstract String getComponentName()
 
-    protected configureTargetMachines(String targetMachines) {
+    protected String configureTargetMachines(String targetMachines) {
         return """
             ${componentUnderTestDsl} {
                 targetMachines = [${targetMachines}]
+            }
+        """
+    }
+
+    protected String configureToolChainSupport(String architecture) {
+        return """
+            model {
+                toolChains {
+                    toolChainFor${architecture.capitalize()}Architecture(Gcc) {
+                        target("host:${architecture}")
+                    }
+                }
             }
         """
     }
