@@ -75,6 +75,9 @@ class DistributedPerformanceTest extends ReportGenerationPerformanceTest {
     @Internal
     String teamCityPassword
 
+    @Internal
+    int repeat
+
     @OutputFile
     @PathSensitive(PathSensitivity.RELATIVE)
     File scenarioList
@@ -122,7 +125,7 @@ class DistributedPerformanceTest extends ReportGenerationPerformanceTest {
         try {
             doExecuteTests()
         } finally {
-            generatePerformanceReport()
+//            generatePerformanceReport()
             testEventsGenerator.release()
         }
     }
@@ -151,8 +154,10 @@ class DistributedPerformanceTest extends ReportGenerationPerformanceTest {
         def coordinatorBuild = resolveCoordinatorBuild()
         testEventsGenerator.coordinatorBuild = coordinatorBuild
 
-        scenarios.each {
-            schedule(it, coordinatorBuild?.lastChangeId)
+        repeat.times {
+            scenarios.each {
+                schedule(it, coordinatorBuild?.lastChangeId)
+            }
         }
 
         waitForTestsCompletion()
@@ -180,6 +185,8 @@ class DistributedPerformanceTest extends ReportGenerationPerformanceTest {
                 ]
             ]
         ]
+
+        Map buildCacheProperties = ['ORG_GRADLE_PROJECT_org.gradle.caching': 'false']
         if (branchName) {
             requestBody['branchName'] = branchName
         }

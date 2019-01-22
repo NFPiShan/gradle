@@ -39,6 +39,9 @@ abstract class ReportGenerationPerformanceTest extends PerformanceTest {
     @PathSensitive(PathSensitivity.RELATIVE)
     File reportDir
 
+    @Internal
+    String reportGeneratorClass = "org.gradle.performance.results.ReportGenerator"
+
     protected abstract List<ScenarioBuildResultData> generateResultsForReport()
 
     protected void generatePerformanceReport() {
@@ -47,7 +50,7 @@ abstract class ReportGenerationPerformanceTest extends PerformanceTest {
         try {
             project.javaexec(new Action<JavaExecSpec>() {
                 void execute(JavaExecSpec spec) {
-                    spec.setMain("org.gradle.performance.results.ReportGenerator")
+                    spec.setMain(reportGeneratorClass)
                     spec.args(resultStoreClass, reportDir.path, resultJson.path, getProject().getName())
                     spec.systemProperties(databaseParameters)
                     spec.systemProperty("org.gradle.performance.execution.channel", channel)
